@@ -67,6 +67,17 @@ public final class AudioAnalyzer: ObservableObject, AudioAnalyzerProtocol {
     }
   }
 
+  nonisolated(unsafe) private var _lastUIUpdateNanos: UInt64 = 0
+  private let _lastUIUpdateNanosLock = NSLock()
+  nonisolated private var lastUIUpdateNanos: UInt64 {
+    get {
+      _lastUIUpdateNanosLock.withLock { _lastUIUpdateNanos }
+    }
+    set {
+      _lastUIUpdateNanosLock.withLock { _lastUIUpdateNanos = newValue }
+    }
+  }
+
   public init(fftSize: Int = 256, windowType: WindowType = .hannWindow) {
     self.fftSize = fftSize
     self._fft = FFT(size: fftSize, windowType: windowType)
@@ -97,6 +108,11 @@ public final class AudioAnalyzer: ObservableObject, AudioAnalyzerProtocol {
 
   nonisolated func calculate(buffer: AVAudioPCMBuffer, audioTime: AVAudioTime) {
     if isActive, isPlaying, let data = buffer.floatChannelData {
+      let now = DispatchTime.now().uptimeNanoseconds
+      let minIntervalNanos: UInt64 = 33_000_000 // ~30 FPS
+      guard now >= lastUIUpdateNanos + minIntervalNanos else { return }
+      lastUIUpdateNanos = now
+
       let magnitudesCalculated = fft.compute(sampleRate: sampleRate, audioData: data.pointee)
       let rmsCalculated = fft.rms(audioData: data.pointee)
 

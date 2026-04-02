@@ -202,6 +202,18 @@ class LargeCurrentlyPlayingPlayerView: UIView, UIGestureRecognizerDelegate {
       name: .offlineModeChanged,
       object: nil
     )
+    appDelegate.notificationHandler.register(
+      self,
+      selector: #selector(appDidBecomeActive),
+      name: UIApplication.didBecomeActiveNotification,
+      object: nil
+    )
+    appDelegate.notificationHandler.register(
+      self,
+      selector: #selector(appWillResignActive),
+      name: UIApplication.willResignActiveNotification,
+      object: nil
+    )
 
     displayElement = getDisplayElementBasedOnConfig()
     refresh()
@@ -210,6 +222,16 @@ class LargeCurrentlyPlayingPlayerView: UIView, UIGestureRecognizerDelegate {
   @objc
   private func refreshOfflineMode() {
     refreshRating()
+  }
+
+  @objc
+  private func appDidBecomeActive() {
+    refreshAnalyzerActivity()
+  }
+
+  @objc
+  private func appWillResignActive() {
+    refreshAnalyzerActivity()
   }
 
   private func setupRatingView() {
@@ -383,7 +405,7 @@ class LargeCurrentlyPlayingPlayerView: UIView, UIGestureRecognizerDelegate {
 
   public func hideVisualizer() {
     visualizerHostingView?.hostingController?.view.isHidden = true
-    appDelegate.player.audioAnalyzer.isActive = false
+    refreshAnalyzerActivity()
   }
 
   public func showVisualizer() {
@@ -391,8 +413,18 @@ class LargeCurrentlyPlayingPlayerView: UIView, UIGestureRecognizerDelegate {
       appDelegate.storage.settings.user.selectedVisualizerType
     )
     visualizerHostingView?.hostingController?.view.isHidden = false
-    appDelegate.player.audioAnalyzer
-      .isActive = (appDelegate.storage.settings.user.playerDisplayStyle == .large)
+    refreshAnalyzerActivity()
+  }
+
+  private func refreshAnalyzerActivity() {
+    let isAppActive = UIApplication.shared.applicationState == .active
+    let isVisualizerVisible = !(
+      visualizerHostingView?.hostingController?.view.isHidden ?? true
+    )
+    appDelegate.player.audioAnalyzer.isActive =
+      isAppActive &&
+      isVisualizerVisible &&
+      appDelegate.storage.settings.user.playerDisplayStyle == .large
   }
 
   private func hideLyrics() {
