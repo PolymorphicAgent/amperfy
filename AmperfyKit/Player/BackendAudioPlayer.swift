@@ -263,7 +263,8 @@ class BackendAudioPlayer: NSObject {
           Task { @MainActor in
             do {
               try await insertStreamPlayable(playable: nextPreloadedPlayable, queueType: .queue)
-              if self.isAutoCachePlayedItems, nextPreloadedPlayable.isDownloadAvailable,
+              if self.shouldAutoCache(playable: nextPreloadedPlayable),
+                 nextPreloadedPlayable.isDownloadAvailable,
                  let accountInfo = nextPreloadedPlayable.account?.info {
                 self.getPlayableDownloaderCB(accountInfo).download(object: nextPreloadedPlayable)
               }
@@ -279,6 +280,7 @@ class BackendAudioPlayer: NSObject {
 
   @MainActor
   private func itemFinishedPlaying() {
+    seekTimeWhenStarted = nil
     isTriggerReinsertPlayableAllowed = true
     isPreviousPlaylableFinshed = true
     if nextPreloadedPlayable != nil {
@@ -405,6 +407,7 @@ class BackendAudioPlayer: NSObject {
       perloadedStreamingBitrate = nil
       activeTranscodingFormat = preloadTranscodingFormat
       preloadTranscodingFormat = nil
+      seekTimeWhenStarted = nil
       isPreviousPlaylableFinshed = false
       currentReplayGainValue = nextPreloadedPlayable.replayGainTrackGain
       applyReplayGain()
@@ -464,7 +467,7 @@ class BackendAudioPlayer: NSObject {
           applyReplayGain()
           try await insertStreamPlayable(playable: playable)
           isPlaying = shouldPlaybackStart
-          if self.isAutoCachePlayedItems, !playable.isRadio,
+          if self.shouldAutoCache(playable: playable), !playable.isRadio,
              let accountInfo = playable.account?.info {
             self.getPlayableDownloaderCB(accountInfo).download(object: playable)
           }
@@ -490,6 +493,13 @@ class BackendAudioPlayer: NSObject {
       displayPopup: true
     )
     responder?.notifyItemPreparationFinished()
+  }
+
+  private func shouldAutoCache(playable: AbstractPlayable) -> Bool {
+    isAutoCachePlayedItems &&
+      !isOfflineMode &&
+      playType == .stream &&
+      !playable.isCached
   }
 
   private func reactToInvalidRadioUrl(playableDisplayTitle: String) {

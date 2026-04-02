@@ -1,0 +1,39 @@
+name: iOS Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Resolve Swift Package dependencies
+        run: |
+          xcodebuild \
+            -project Amperfy.xcodeproj \
+            -scheme Amperfy \
+            -resolvePackageDependencies
+
+      - name: Build (generic iOS device)
+        run: |
+          xcodebuild \
+            -project Amperfy.xcodeproj \
+            -scheme Amperfy \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            IPHONEOS_DEPLOYMENT_TARGET=18.5 \
+            build
