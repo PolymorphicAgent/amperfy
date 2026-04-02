@@ -280,6 +280,7 @@ class BackendAudioPlayer: NSObject {
 
   @MainActor
   private func itemFinishedPlaying() {
+    seekTimeWhenStarted = nil
     isTriggerReinsertPlayableAllowed = true
     isPreviousPlaylableFinshed = true
     if nextPreloadedPlayable != nil {
@@ -406,6 +407,7 @@ class BackendAudioPlayer: NSObject {
       perloadedStreamingBitrate = nil
       activeTranscodingFormat = preloadTranscodingFormat
       preloadTranscodingFormat = nil
+      seekTimeWhenStarted = nil
       isPreviousPlaylableFinshed = false
       currentReplayGainValue = nextPreloadedPlayable.replayGainTrackGain
       applyReplayGain()
