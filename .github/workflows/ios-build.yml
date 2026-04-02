@@ -30,5 +30,10 @@ jobs:
             -project Amperfy.xcodeproj \
             -scheme Amperfy \
             -configuration Debug \
-            -destination 'generic/platform=iOS' \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            IPHONEOS_DEPLOYMENT_TARGET=18.5 \
             build
